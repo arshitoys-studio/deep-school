@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>mmshoool Management</title>
+<style>
+body {font-family: Arial, sans-serif; background-color: #f4f4f4; margin:0; padding:0;}
+header {background-color: #2c3e50; color:white; padding:20px; text-align:center;}
+nav {background-color:#34495e; display:flex; justify-content:center; gap:15px; padding:15px;}
+nav a {color:white; text-decoration:none; font-weight:bold; padding:8px 12px; border-radius:4px; transition:0.3s;}
+nav a:hover {background-color:#1abc9c;}
+.content {padding:20px;}
+form {background-color:white; padding:20px; margin:auto; max-width:500px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+input, select, button {width:100%; margin-top:10px; padding:10px; border:1px solid #ccc; border-radius:4px;}
+button {background-color:#2c3e50; color:white; border:none; cursor:pointer; transition:0.3s;}
+button:hover {background-color:#1abc9c;}
+table {width:100%; border-collapse: collapse; margin-top:20px; background-color:white;}
+th, td {border:1px solid #ccc; padding:8px; text-align:left;}
+th {background-color:#34495e; color:white;}
+.attendance-table input[type="checkbox"] {transform: scale(1.2);}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>mmshoool Management Dashboard</h1>
+</header>
+
+<nav>
+    <a href="#home" onclick="showSection('home')">Home</a>
+    <a href="#students" onclick="showSection('students')">Students</a>
+    <a href="#teachers" onclick="showSection('teachers')">Teachers</a>
+    <a href="#attendance" onclick="showSection('attendance')">Attendance</a>
+    <a href="#fees" onclick="showSection('fees')">Fees</a>
+    <a href="#results" onclick="showSection('results')">Results</a>
+    <a href="#idcards" onclick="showSection('idcards')">ID Cards</a>
+</nav>
+
+<!-- Home Section -->
+<div class="content" id="home">
+    <h2>Welcome to mmshoool Management</h2>
+    <p>Use the menu above to manage students, teachers, attendance, fees, results, and ID cards.</p>
+</div>
+
+<!-- Students Section -->
+<div class="content" id="students" style="display:none;">
+    <h2>Add New Student</h2>
+    <form id="studentForm">
+        <input type="text" id="studentName" placeholder="Student Name" required />
+        <input type="text" id="studentClass" placeholder="Class" required />
+        <input type="number" id="studentAge" placeholder="Age" required />
+        <input type="text" id="studentContact" placeholder="Contact Number" required />
+        <button type="submit">Add Student</button>
+    </form>
+
+    <h2>Student List</h2>
+    <table id="studentTable">
+        <tr>
+            <th>Name</th>
+            <th>Class</th>
+            <th>Age</th>
+            <th>Contact</th>
+        </tr>
+    </table>
+</div>
+
+<!-- Teachers Section -->
+<div class="content" id="teachers" style="display:none;">
+    <h2>Add New Teacher</h2>
+    <form id="teacherForm">
+        <input type="text" id="teacherName" placeholder="Teacher Name" required />
+        <input type="text" id="teacherSubject" placeholder="Subject" required />
+        <input type="number" id="teacherExperience" placeholder="Experience (Years)" required />
+        <button type="submit">Add Teacher</button>
+    </form>
+
+    <h2>Teacher List</h2>
+    <table id="teacherTable">
+        <tr>
+            <th>Name</th>
+            <th>Subject</th>
+            <th>Experience (Years)</th>
+        </tr>
+    </table>
+</div>
+
+<!-- Attendance Section -->
+<div class="content" id="attendance" style="display:none;">
+    <h2>Attendance Tracker</h2>
+    <p>Select a date and mark students present.</p>
+    <input type="date" id="attendanceDate" />
+    <button onclick="generateAttendance()">Load Students</button>
+
+    <table id="attendanceTable" class="attendance-table" style="display:none;">
+        <tr>
+            <th>Name</th>
+            <th>Class</th>
+            <th>Present</th>
+        </tr>
+    </table>
+    <button id="saveAttendance" style="display:none;" onclick="saveAttendance()">Save Attendance</button>
+</div>
+
+<!-- Fees Section -->
+<div class="content" id="fees" style="display:none;">
+    <h2>Fees Section Coming Soon</h2>
+</div>
+
+<!-- Results Section -->
+<div class="content" id="results" style="display:none;">
+    <h2>Results Section Coming Soon</h2>
+</div>
+
+<!-- ID Cards Section -->
+<div class="content" id="idcards" style="display:none;">
+    <h2>ID Cards Section Coming Soon</h2>
+</div>
+
+<script>
+let students = [];
+let teachers = [];
+
+function showSection(sectionId){
+    const sections = ['home','students','teachers','attendance','fees','results','idcards'];
+    sections.forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById(sectionId).style.display = 'block';
+}
+
+// Add Student
+document.getElementById('studentForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const name = document.getElementById('studentName').value;
+    const studentClass = document.getElementById('studentClass').value;
+    const age = document.getElementById('studentAge').value;
+    const contact = document.getElementById('studentContact').value;
+
+    students.push({name, studentClass, age, contact});
+
+    const table = document.getElementById('studentTable');
+    const row = table.insertRow();
+    row.insertCell(0).innerText = name;
+    row.insertCell(1).innerText = studentClass;
+    row.insertCell(2).innerText = age;
+    row.insertCell(3).innerText = contact;
+
+    document.getElementById('studentForm').reset();
+});
+
+// Add Teacher
+document.getElementById('teacherForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const name = document.getElementById('teacherName').value;
+    const subject = document.getElementById('teacherSubject').value;
+    const experience = document.getElementById('teacherExperience').value;
+
+    teachers.push({name, subject, experience});
+
+    const table = document.getElementById('teacherTable');
+    const row = table.insertRow();
+    row.insertCell(0).innerText = name;
+    row.insertCell(1).innerText = subject;
+    row.insertCell(2).innerText = experience;
+
+    document.getElementById('teacherForm').reset();
+});
+
+// Attendance
+function generateAttendance(){
+    const date = document.getElementById('attendanceDate').value;
+    if(!date){
+        alert('Please select a date.');
+        return;
+    }
+    const table = document.getElementById('attendanceTable');
+    table.style.display = 'table';
+    document.getElementById('saveAttendance').style.display = 'block';
+    table.innerHTML = `<tr><th>Name</th><th>Class</th><th>Present</th></tr>`;
+    students.forEach((student, index) => {
+        const row = table.insertRow();
+        row.insertCell(0).innerText = student.name;
+        row.insertCell(1).innerText = student.studentClass;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = 'att_'+index;
+        row.insertCell(2).appendChild(checkbox);
+    });
+}
+
+function saveAttendance(){
+    alert('Attendance saved successfully! (Front-end demo only)');
+}
+</script>
+
+</body>
+</html>
