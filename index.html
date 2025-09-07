@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>स्कूल मैनेजमेंट डैशबोर्ड</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* हल्का नीला-ग्रे बैकग्राउंड */
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+        .id-card-container {
+            width: 204px; /* 54mm in pixels */
+            height: 324px; /* 85.6mm in pixels */
+            box-sizing: border-box;
+            background-image: url('https://placehold.co/204x324/f0f4f8/e2e8f0?text=डिजिटल+आईडी+कार्ड');
+            background-size: cover;
+            background-position: center;
+        }
+        /* Print-specific styles */
+        @media print {
+            body > *:not(#id-card-modal) {
+                display: none !important;
+            }
+            #id-card-modal {
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: none !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            .id-card-container {
+                box-shadow: none !important;
+                transform: none !important;
+                border: 1px solid #000;
+            }
+            .print-hidden {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- मुख्य कंटेनर -->
+    <div class="max-w-7xl mx-auto bg-white shadow-2xl rounded-3xl p-6 sm:p-10">
+        
+        <!-- हेडर सेक्शन -->
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 pb-4 border-b border-gray-200">
+            <div class="mb-4 lg:mb-0">
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">स्कूल मैनेजमेंट</h1>
+                <p class="text-gray-600 mt-1 text-lg">डैशबोर्ड का प्रबंधन</p>
+                <p id="user-id" class="text-xs text-gray-400 mt-2 break-all"></p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                 <button id="add-student-btn" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:bg-indigo-700 transition-colors duration-300 transform hover:scale-105">
+                    नया छात्र जोड़ें
+                </button>
+                <button id="add-teacher-btn" class="bg-purple-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:bg-purple-700 transition-colors duration-300 transform hover:scale-105">
+                    नया शिक्षक जोड़ें
+                </button>
+                <button id="take-student-attendance-btn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:bg-green-700 transition-colors duration-300 transform hover:scale-105">
+                    छात्र उपस्थिति
+                </button>
+                <button id="take-teacher-attendance-btn" class="bg-pink-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg hover:bg-pink-700 transition-colors duration-300 transform hover:scale-105">
+                    शिक्षक उपस्थिति
+                </button>
+            </div>
+        </div>
+
+        <!-- डैशबोर्ड ग्रिड -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+            <!-- कार्ड 1: आज उपस्थित छात्र -->
+            <div class="bg-blue-50 p-6 rounded-2xl shadow-md border-l-4 border-blue-500 transform hover:-translate-y-2 transition-transform duration-300">
+                <div class="flex items-center mb-4">
+                    <svg class="w-8 h-8 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm-6-2a6 6 0 00-6-6v12m8-12a6 6 0 00-6-6v12"></path>
+                    </svg>
+                    <p class="text-gray-700 font-medium text-lg">आज उपस्थित छात्र</p>
+                </div>
+                <p id="present-students-count" class="text-4xl font-bold text-gray-900">0</p>
+                <p id="student-attendance-percent" class="text-green-500 mt-2 text-sm font-medium">डेटाबेस से अपडेट हो रहा है...</p>
+            </div>
+
+            <!-- कार्ड 2: आज उपस्थित शिक्षक -->
+            <div class="bg-pink-50 p-6 rounded-2xl shadow-md border-l-4 border-pink-500 transform hover:-translate-y-2 transition-transform duration-300">
+                <div class="flex items-center mb-4">
+                    <svg class="w-8 h-8 text-pink-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    <p class="text-gray-700 font-medium text-lg">आज उपस्थित शिक्षक</p>
+                </div>
+                <p id="present-teachers-count" class="text-4xl font-bold text-gray-900">0</p>
+                <p id="teacher-attendance-percent" class="text-gray-500 mt-2 text-sm font-medium">डेटाबेस से अपडेट हो रहा है...</p>
+            </div>
+
+            <!-- कार्ड 3: कुल छात्र -->
+            <div class="bg-indigo-50 p-6 rounded-2xl shadow-md border-l-4 border-indigo-500 transform hover:-translate-y-2 transition-transform duration-300">
+                <div class="flex items-center mb-4">
+                    <svg class="w-8 h-8 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h-10a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v13a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-gray-700 font-medium text-lg">कुल छात्र</p>
+                </div>
+                <p id="total-students-count" class="text-4xl font-bold text-gray-900">0</p>
+                <p class="text-gray-500 mt-2 text-sm font-medium">डेटाबेस से अपडेट हो रहा है...</p>
+            </div>
+
+            <!-- कार्ड 4: कुल शिक्षक -->
+            <div class="bg-purple-50 p-6 rounded-2xl shadow-md border-l-4 border-purple-500 transform hover:-translate-y-2 transition-transform duration-300">
+                <div class="flex items-center mb-4">
+                    <svg class="w-8 h-8 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    <p class="text-gray-700 font-medium text-lg">कुल शिक्षक</p>
+                </div>
+                <p id="total-teachers-count" class="text-4xl font-bold text-gray-900">0</p>
+                <p class="text-gray-500 mt-2 text-sm font-medium">डेटाबेस से अपडेट हो रहा है...</p>
+            </div>
+
+        </div>
+
+        <!-- सूची सेक्शन -->
+        <div class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- छात्रों की सूची -->
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-md">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">छात्रों की सूची</h2>
+                <ul id="student-list" class="space-y-4">
+                    <li class="p-4 bg-white rounded-lg shadow-sm flex justify-between items-center hover:bg-gray-100 transition-colors duration-200">
+                        <span class="text-gray-700 font-medium">डेटाबेस से छात्रों को लोड किया जा रहा है...</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- शिक्षकों की सूची -->
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-md">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">शिक्षकों की सूची</h2>
+                <ul id="teacher-list" class="space-y-4">
+                    <li class="p-4 bg-white rounded-lg shadow-sm flex justify-between items-center hover:bg-gray-100 transition-colors duration-200">
+                        <span class="text-gray-700 font-medium">डेटाबेस से शिक्षकों को लोड किया जा रहा है...</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for adding new student -->
+    <div id="add-student-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 transform transition-all duration-300 scale-95">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">नया छात्र जोड़ें</h2>
+            <form id="add-student-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label for="student-name" class="block text-gray-700 font-medium mb-2">छात्र का नाम</label>
+                        <input type="text" id="student-name" name="student-name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="student-class" class="block text-gray-700 font-medium mb-2">कक्षा</label>
+                        <input type="text" id="student-class" name="student-class" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="father-name" class="block text-gray-700 font-medium mb-2">पिता का नाम</label>
+                        <input type="text" id="father-name" name="father-name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="roll-number" class="block text-gray-700 font-medium mb-2">रोल नंबर</label>
+                        <input type="number" id="roll-number" name="roll-number" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="blood-group" class="block text-gray-700 font-medium mb-2">ब्लड ग्रुप</label>
+                        <input type="text" id="blood-group" name="blood-group" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="mobile-number" class="block text-gray-700 font-medium mb-2">मोबाइल नंबर</label>
+                        <input type="tel" id="mobile-number" name="mobile-number" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="mb-4 md:col-span-2">
+                        <label for="address" class="block text-gray-700 font-medium mb-2">पता</label>
+                        <textarea id="address" name="address" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-add-student-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 font-medium hover:bg-gray-100 transition-colors duration-200">
+                        रद्द करें
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-full font-medium hover:bg-indigo-700 transition-colors duration-200">
+                        जोड़ें
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for adding new teacher -->
+    <div id="add-teacher-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 transform transition-all duration-300 scale-95">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">नया शिक्षक जोड़ें</h2>
+            <form id="add-teacher-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label for="teacher-name" class="block text-gray-700 font-medium mb-2">शिक्षक का नाम</label>
+                        <input type="text" id="teacher-name" name="teacher-name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="teacher-subject" class="block text-gray-700 font-medium mb-2">विषय</label>
+                        <input type="text" id="teacher-subject" name="teacher-subject" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="teacher-contact" class="block text-gray-700 font-medium mb-2">संपर्क नंबर</label>
+                        <input type="tel" id="teacher-contact" name="teacher-contact" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="teacher-father-name" class="block text-gray-700 font-medium mb-2">पिता का नाम</label>
+                        <input type="text" id="teacher-father-name" name="teacher-father-name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="teacher-qualification" class="block text-gray-700 font-medium mb-2">योग्यता</label>
+                        <input type="text" id="teacher-qualification" name="teacher-qualification" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-4 flex items-center">
+                        <input type="checkbox" id="teacher-is-class-teacher" name="teacher-is-class-teacher" class="form-checkbox h-5 w-5 text-purple-600 rounded">
+                        <label for="teacher-is-class-teacher" class="ml-2 text-gray-700 font-medium">कक्षा शिक्षक</label>
+                    </div>
+                    <div class="mb-4 md:col-span-2">
+                        <label for="teacher-address" class="block text-gray-700 font-medium mb-2">पता</label>
+                        <textarea id="teacher-address" name="teacher-address" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-add-teacher-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 font-medium hover:bg-gray-100 transition-colors duration-200">
+                        रद्द करें
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-full font-medium hover:bg-purple-700 transition-colors duration-200">
+                        जोड़ें
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for taking student attendance -->
+    <div id="student-attendance-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 transform transition-all duration-300 scale-95">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">छात्रों की उपस्थिति लें</h2>
+            <form id="student-attendance-form">
+                <ul id="student-attendance-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                    <!-- Students will be dynamically loaded here -->
+                </ul>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-student-attendance-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 font-medium hover:bg-gray-100 transition-colors duration-200">
+                        रद्द करें
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors duration-200">
+                        उपस्थिति जमा करें
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal for taking teacher attendance -->
+    <div id="teacher-attendance-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 transform transition-all duration-300 scale-95">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">शिक्षकों की उपस्थिति लें</h2>
+            <form id="teacher-attendance-form">
+                <ul id="teacher-attendance-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                    <!-- Teachers will be dynamically loaded here -->
+                </ul>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-teacher-attendance-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 font-medium hover:bg-gray-100 transition-colors duration-200">
+                        रद्द करें
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-pink-600 text-white rounded-full font-medium hover:bg-pink-700 transition-colors duration-200">
+                        उपस्थिति जमा करें
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Student ID Card -->
+    <div id="id-card-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-11/12 md:w-2/3 lg:w-1/2 transform transition-all duration-300 scale-95">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 print-hidden">छात्र का आईडी कार्ड</h2>
+            <div id="id-card-content" class="bg-gray-100 p-4 rounded-xl relative id-card-container overflow-hidden flex flex-col items-center text-center">
+                <!-- Header -->
+                <div class="flex flex-col items-center justify-center pt-2 pb-4">
+                    <img src="https://placehold.co/40x40/6366f1/ffffff?text=लोगो" alt="School Logo" class="w-10 h-10 rounded-full mb-2">
+                    <h3 class="text-lg font-bold text-indigo-800">स्कूल का नाम</h3>
+                    <p class="text-sm text-gray-600 mt-1">छात्र पहचान पत्र</p>
+                </div>
+                <!-- Photo and details -->
+                <div class="relative z-10 text-gray-800 flex flex-col items-center flex-1">
+                    <img src="https://placehold.co/100x100/6366f1/ffffff?text=फोटो" alt="Student Photo" class="w-24 h-24 rounded-full border-2 border-white shadow-md mb-4">
+                    <div class="w-full">
+                        <p class="text-lg font-semibold text-gray-900" id="id-card-student-name">नाम</p>
+                        <div class="mt-4 text-sm w-full space-y-2">
+                            <div>
+                                <span class="text-xs text-gray-500 block">कक्षा</span>
+                                <span class="block font-medium" id="id-card-student-class"></span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">रोल नंबर</span>
+                                <span class="block font-medium" id="id-card-student-roll"></span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">पिता का नाम</span>
+                                <span class="block font-medium" id="id-card-father-name"></span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">मोबाइल नंबर</span>
+                                <span class="block font-medium" id="id-card-mobile-number"></span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">ब्लड ग्रुप</span>
+                                <span class="block font-medium" id="id-card-blood-group"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Footer -->
+                <div class="text-center text-xs text-gray-400 mt-auto pt-2">
+                    <span>यह एक डिजिटल आईडी कार्ड है।</span>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6 print-hidden">
+                <button type="button" id="cancel-id-card-btn" class="px-6 py-2 border border-gray-300 rounded-full text-gray-700 font-medium hover:bg-gray-100 transition-colors duration-200">
+                    रद्द करें
+                </button>
+                <button type="button" id="print-id-card-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-full font-medium hover:bg-indigo-700 transition-colors duration-200">
+                    प्रिंट करें
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, getDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Firebase config and app ID are automatically provided
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // UI elements for student management
+        const addStudentBtn = document.getElementById('add-student-btn');
+        const addStudentModal = document.getElementById('add-student-modal');
+        const cancelAddStudentBtn = document.getElementById('cancel-add-student-btn');
+        const addStudentForm = document.getElementById('add-student-form');
+        const studentNameInput = document.getElementById('student-name');
+        const studentClassInput = document.getElementById('student-class');
+        const fatherNameInput = document.getElementById('father-name');
+        const rollNumberInput = document.getElementById('roll-number');
+        const bloodGroupInput = document.getElementById('blood-group');
+        const mobileNumberInput = document.getElementById('mobile-number');
+        const addressInput = document.getElementById('address');
+        const studentList = document.getElementById('student-list');
+        const userIdEl = document.getElementById('user-id');
+        const totalStudentsCountEl = document.getElementById('total-students-count');
+        
+        // UI elements for teacher management
+        const addTeacherBtn = document.getElementById('add-teacher-btn');
+        const addTeacherModal = document.getElementById('add-teacher-modal');
+        const cancelAddTeacherBtn = document.getElementById('cancel-add-teacher-btn');
+        const addTeacherForm = document.getElementById('add-teacher-form');
+        const teacherNameInput = document.getElementById('teacher-name');
+        const teacherSubjectInput = document.getElementById('teacher-subject');
+        const teacherContactInput = document.getElementById('teacher-contact');
+        const teacherFatherNameInput = document.getElementById('teacher-father-name');
+        const teacherQualificationInput = document.getElementById('teacher-qualification');
+        const teacherIsClassTeacherInput = document.getElementById('teacher-is-class-teacher');
+        const teacherAddressInput = document.getElementById('teacher-address');
+        const teacherList = document.getElementById('teacher-list');
+        const totalTeachersCountEl = document.getElementById('total-teachers-count');
+        
+        // UI elements for attendance management
+        const takeStudentAttendanceBtn = document.getElementById('take-student-attendance-btn');
+        const takeTeacherAttendanceBtn = document.getElementById('take-teacher-attendance-btn');
+        const studentAttendanceModal = document.getElementById('student-attendance-modal');
+        const teacherAttendanceModal = document.getElementById('teacher-attendance-modal');
+        const cancelStudentAttendanceBtn = document.getElementById('cancel-student-attendance-btn');
+        const cancelTeacherAttendanceBtn = document.getElementById('cancel-teacher-attendance-btn');
+        const studentAttendanceForm = document.getElementById('student-attendance-form');
+        const teacherAttendanceForm = document.getElementById('teacher-attendance-form');
+        const studentAttendanceListEl = document.getElementById('student-attendance-list');
+        const teacherAttendanceListEl = document.getElementById('teacher-attendance-list');
+        const presentStudentsCountEl = document.getElementById('present-students-count');
+        const studentAttendancePercentEl = document.getElementById('student-attendance-percent');
+        const presentTeachersCountEl = document.getElementById('present-teachers-count');
+        const teacherAttendancePercentEl = document.getElementById('teacher-attendance-percent');
+
+        // UI elements for ID Card Modal
+        const idCardModal = document.getElementById('id-card-modal');
+        const cancelIdCardBtn = document.getElementById('cancel-id-card-btn');
+        const printIdCardBtn = document.getElementById('print-id-card-btn');
+        const idCardStudentName = document.getElementById('id-card-student-name');
+        const idCardStudentClass = document.getElementById('id-card-student-class');
+        const idCardStudentRoll = document.getElementById('id-card-student-roll');
+        const idCardFatherName = document.getElementById('id-card-father-name');
+        const idCardMobileNumber = document.getElementById('id-card-mobile-number');
+        const idCardBloodGroup = document.getElementById('id-card-blood-group');
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        setLogLevel('debug'); // Enable debug logging for Firestore
+
+        let userId = null;
+        let isAuthReady = false;
+        let allStudents = [];
+        let allTeachers = [];
+
+        // Sign in anonymously or with custom token
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                userIdEl.textContent = `User ID: ${userId}`;
+                isAuthReady = true;
+                // Once authenticated, start listening for data
+                listenForStudents();
+                listenForTeachers();
+            } else {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            }
+        });
+
+        // Listen for student data changes
+        const listenForStudents = () => {
+            if (!isAuthReady || !userId) return;
+
+            const studentCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/students`);
+            
+            onSnapshot(studentCollectionRef, (snapshot) => {
+                studentList.innerHTML = '';
+                allStudents = [];
+                snapshot.forEach(doc => {
+                    allStudents.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Update total students count
+                totalStudentsCountEl.textContent = allStudents.length;
+
+                if (allStudents.length === 0) {
+                    const emptyMessage = document.createElement('li');
+                    emptyMessage.className = 'p-4 bg-white rounded-lg shadow-sm flex justify-center items-center';
+                    emptyMessage.innerHTML = `<span class="text-gray-500 font-medium">कोई छात्र नहीं है। एक छात्र जोड़ें!</span>`;
+                    studentList.appendChild(emptyMessage);
+                } else {
+                    allStudents.forEach(student => {
+                        const studentItem = document.createElement('li');
+                        studentItem.className = 'p-4 bg-white rounded-lg shadow-sm flex-col md:flex-row md:justify-between items-start md:items-center hover:bg-gray-100 transition-colors duration-200';
+                        
+                        let details = `
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-gray-700 font-medium">${student.name}</span>
+                                    <span class="text-gray-500 text-sm">कक्षा ${student.class}</span>
+                                </div>
+                                <div class="text-gray-400 text-sm mt-1 space-x-2">
+                                    <span>पिता: ${student.fatherName || 'N/A'}</span>
+                                    <span>रोल नंबर: ${student.rollNumber || 'N/A'}</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 md:mt-0">
+                                <button data-id="${student.id}" class="id-card-btn bg-indigo-500 text-white font-semibold py-2 px-4 rounded-full text-sm hover:bg-indigo-600 transition-colors duration-300">
+                                    आईडी कार्ड
+                                </button>
+                            </div>
+                        `;
+                        
+                        studentItem.innerHTML = details;
+                        studentList.appendChild(studentItem);
+                    });
+                }
+                
+                // Update attendance card after student data loads
+                updateStudentAttendanceCard();
+            });
+        };
+
+        // Listen for teacher data changes
+        const listenForTeachers = () => {
+            if (!isAuthReady || !userId) return;
+
+            const teacherCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/teachers`);
+            
+            onSnapshot(teacherCollectionRef, (snapshot) => {
+                teacherList.innerHTML = '';
+                allTeachers = [];
+                snapshot.forEach(doc => {
+                    allTeachers.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Update total teachers count
+                totalTeachersCountEl.textContent = allTeachers.length;
+
+                if (allTeachers.length === 0) {
+                    const emptyMessage = document.createElement('li');
+                    emptyMessage.className = 'p-4 bg-white rounded-lg shadow-sm flex justify-center items-center';
+                    emptyMessage.innerHTML = `<span class="text-gray-500 font-medium">कोई शिक्षक नहीं है। एक शिक्षक जोड़ें!</span>`;
+                    teacherList.appendChild(emptyMessage);
+                } else {
+                    allTeachers.forEach(teacher => {
+                        const teacherItem = document.createElement('li');
+                        teacherItem.className = 'p-4 bg-white rounded-lg shadow-sm flex-col md:flex-row md:justify-between items-start md:items-center hover:bg-gray-100 transition-colors duration-200';
+                        
+                        teacherItem.innerHTML = `
+                            <div class="flex-1 min-w-0">
+                                <span class="text-gray-700 font-medium">${teacher.name}</span>
+                                <div class="text-gray-500 text-sm mt-1 md:mt-0 space-x-2">
+                                    <span>विषय: ${teacher.subject || 'N/A'}</span>
+                                    <span>संपर्क: ${teacher.contact || 'N/A'}</span>
+                                </div>
+                                <div class="text-gray-400 text-sm mt-1 space-x-2">
+                                    <span>पिता: ${teacher.fatherName || 'N/A'}</span>
+                                    <span>योग्यता: ${teacher.qualification || 'N/A'}</span>
+                                    <span>कक्षा शिक्षक: ${teacher.isClassTeacher ? 'हाँ' : 'नहीं'}</span>
+                                </div>
+                                <div class="text-gray-400 text-sm mt-1">
+                                    <span>पता: ${teacher.address || 'N/A'}</span>
+                                </div>
+                            </div>
+                        `;
+                        teacherList.appendChild(teacherItem);
+                    });
+                }
+                updateTeacherAttendanceCard();
+            });
+        };
+
+        const updateStudentAttendanceCard = async () => {
+            if (!isAuthReady || !userId) return;
+
+            const totalStudents = allStudents.length;
+            const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+            const attendanceDocRef = doc(db, `/artifacts/${appId}/users/${userId}/student_attendance/${today}`);
+            const attendanceDoc = await getDoc(attendanceDocRef);
+
+            let presentStudents = 0;
+            if (attendanceDoc.exists()) {
+                presentStudents = attendanceDoc.data().present_ids.length;
+            }
+
+            presentStudentsCountEl.textContent = presentStudents;
+
+            if (totalStudents > 0) {
+                const percentage = ((presentStudents / totalStudents) * 100).toFixed(0);
+                studentAttendancePercentEl.textContent = `${percentage}% उपस्थिति`;
+                studentAttendancePercentEl.classList.remove('text-green-500', 'text-red-500');
+                studentAttendancePercentEl.classList.add(percentage > 75 ? 'text-green-500' : 'text-red-500');
+            } else {
+                studentAttendancePercentEl.textContent = 'कोई छात्र नहीं है';
+            }
+        };
+
+        const updateTeacherAttendanceCard = async () => {
+            if (!isAuthReady || !userId) return;
+
+            const totalTeachers = allTeachers.length;
+            const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+            const attendanceDocRef = doc(db, `/artifacts/${appId}/users/${userId}/teacher_attendance/${today}`);
+            const attendanceDoc = await getDoc(attendanceDocRef);
+
+            let presentTeachers = 0;
+            if (attendanceDoc.exists()) {
+                presentTeachers = attendanceDoc.data().present_ids.length;
+            }
+
+            presentTeachersCountEl.textContent = presentTeachers;
+
+            if (totalTeachers > 0) {
+                const percentage = ((presentTeachers / totalTeachers) * 100).toFixed(0);
+                teacherAttendancePercentEl.textContent = `${percentage}% उपस्थिति`;
+                teacherAttendancePercentEl.classList.remove('text-green-500', 'text-red-500');
+                teacherAttendancePercentEl.classList.add(percentage > 75 ? 'text-green-500' : 'text-red-500');
+            } else {
+                teacherAttendancePercentEl.textContent = 'कोई शिक्षक नहीं है';
+            }
+        };
+
+        // --- Student Management Modal Logic ---
+        addStudentBtn.addEventListener('click', () => {
+            addStudentModal.classList.remove('hidden');
+        });
+        cancelAddStudentBtn.addEventListener('click', () => {
+            addStudentModal.classList.add('hidden');
+            addStudentForm.reset();
+        });
+        addStudentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const studentName = studentNameInput.value;
+            const studentClass = studentClassInput.value;
+            const fatherName = fatherNameInput.value;
+            const rollNumber = rollNumberInput.value;
+            const bloodGroup = bloodGroupInput.value;
+            const mobileNumber = mobileNumberInput.value;
+            const address = addressInput.value;
+
+            if (studentName && studentClass) {
+                if (!isAuthReady || !userId) {
+                    console.error("Firebase not ready or user not authenticated.");
+                    return;
+                }
+                try {
+                    const studentCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/students`);
+                    await addDoc(studentCollectionRef, {
+                        name: studentName,
+                        class: studentClass,
+                        fatherName: fatherName,
+                        rollNumber: rollNumber,
+                        bloodGroup: bloodGroup,
+                        mobileNumber: mobileNumber,
+                        address: address
+                    });
+                    addStudentModal.classList.add('hidden');
+                    addStudentForm.reset();
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                }
+            }
+        });
+
+        // --- Teacher Management Modal Logic ---
+        addTeacherBtn.addEventListener('click', () => {
+            addTeacherModal.classList.remove('hidden');
+        });
+        cancelAddTeacherBtn.addEventListener('click', () => {
+            addTeacherModal.classList.add('hidden');
+            addTeacherForm.reset();
+        });
+        addTeacherForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const teacherName = teacherNameInput.value;
+            const teacherSubject = teacherSubjectInput.value;
+            const teacherContact = teacherContactInput.value;
+            const teacherFatherName = teacherFatherNameInput.value;
+            const teacherQualification = teacherQualificationInput.value;
+            const teacherIsClassTeacher = teacherIsClassTeacherInput.checked;
+            const teacherAddress = teacherAddressInput.value;
+
+            if (teacherName && teacherSubject) {
+                if (!isAuthReady || !userId) {
+                    console.error("Firebase not ready or user not authenticated.");
+                    return;
+                }
+                try {
+                    const teacherCollectionRef = collection(db, `/artifacts/${appId}/users/${userId}/teachers`);
+                    await addDoc(teacherCollectionRef, {
+                        name: teacherName,
+                        subject: teacherSubject,
+                        contact: teacherContact,
+                        fatherName: teacherFatherName,
+                        qualification: teacherQualification,
+                        isClassTeacher: teacherIsClassTeacher,
+                        address: teacherAddress
+                    });
+                    addTeacherModal.classList.add('hidden');
+                    addTeacherForm.reset();
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                }
+            }
+        });
+
+        // --- Student Attendance Modal Logic ---
+        takeStudentAttendanceBtn.addEventListener('click', () => {
+            // Populate the attendance list in the modal
+            studentAttendanceListEl.innerHTML = '';
+            if (allStudents.length === 0) {
+                studentAttendanceListEl.innerHTML = `<li class="text-center text-gray-500">कोई छात्र नहीं है। पहले एक छात्र जोड़ें।</li>`;
+            } else {
+                allStudents.forEach(student => {
+                    const studentItem = document.createElement('li');
+                    studentItem.className = 'p-3 bg-white rounded-lg shadow-sm flex items-center justify-between';
+                    studentItem.innerHTML = `
+                        <label for="student-${student.id}" class="flex-grow font-medium text-gray-700">${student.name} - कक्षा ${student.class}</label>
+                        <input type="checkbox" id="student-${student.id}" name="present" value="${student.id}" class="form-checkbox h-5 w-5 text-green-600 rounded focus:ring-green-500">
+                    `;
+                    studentAttendanceListEl.appendChild(studentItem);
+                });
+            }
+            studentAttendanceModal.classList.remove('hidden');
+        });
+
+        cancelStudentAttendanceBtn.addEventListener('click', () => {
+            studentAttendanceModal.classList.add('hidden');
+        });
+
+        studentAttendanceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAuthReady || !userId) {
+                console.error("Firebase not ready or user not authenticated.");
+                return;
+            }
+
+            const presentStudents = Array.from(studentAttendanceForm.elements['present'])
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.value);
+            
+            try {
+                const today = new Date().toISOString().slice(0, 10);
+                const attendanceDocRef = doc(db, `/artifacts/${appId}/users/${userId}/student_attendance/${today}`);
+                await setDoc(attendanceDocRef, {
+                    date: today,
+                    present_ids: presentStudents,
+                });
+
+                studentAttendanceModal.classList.add('hidden');
+                // The onSnapshot listener will automatically update the dashboard
+            } catch (e) {
+                console.error("Error saving attendance: ", e);
+            }
+        });
+        
+        // --- Teacher Attendance Modal Logic ---
+        takeTeacherAttendanceBtn.addEventListener('click', () => {
+            // Populate the attendance list in the modal
+            teacherAttendanceListEl.innerHTML = '';
+            if (allTeachers.length === 0) {
+                teacherAttendanceListEl.innerHTML = `<li class="text-center text-gray-500">कोई शिक्षक नहीं है। पहले एक शिक्षक जोड़ें।</li>`;
+            } else {
+                allTeachers.forEach(teacher => {
+                    const teacherItem = document.createElement('li');
+                    teacherItem.className = 'p-3 bg-white rounded-lg shadow-sm flex items-center justify-between';
+                    teacherItem.innerHTML = `
+                        <label for="teacher-${teacher.id}" class="flex-grow font-medium text-gray-700">${teacher.name} - ${teacher.subject || 'N/A'}</label>
+                        <input type="checkbox" id="teacher-${teacher.id}" name="present" value="${teacher.id}" class="form-checkbox h-5 w-5 text-pink-600 rounded focus:ring-pink-500">
+                    `;
+                    teacherAttendanceListEl.appendChild(teacherItem);
+                });
+            }
+            teacherAttendanceModal.classList.remove('hidden');
+        });
+
+        cancelTeacherAttendanceBtn.addEventListener('click', () => {
+            teacherAttendanceModal.classList.add('hidden');
+        });
+
+        teacherAttendanceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAuthReady || !userId) {
+                console.error("Firebase not ready or user not authenticated.");
+                return;
+            }
+
+            const presentTeachers = Array.from(teacherAttendanceForm.elements['present'])
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.value);
+            
+            try {
+                const today = new Date().toISOString().slice(0, 10);
+                const attendanceDocRef = doc(db, `/artifacts/${appId}/users/${userId}/teacher_attendance/${today}`);
+                await setDoc(attendanceDocRef, {
+                    date: today,
+                    present_ids: presentTeachers,
+                });
+
+                teacherAttendanceModal.classList.add('hidden');
+                // The onSnapshot listener will automatically update the dashboard
+            } catch (e) {
+                console.error("Error saving attendance: ", e);
+            }
+        });
+
+        // --- ID Card Modal Logic ---
+        // Event delegation to handle clicks on dynamically created buttons
+        studentList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('id-card-btn')) {
+                const studentId = e.target.dataset.id;
+                const student = allStudents.find(s => s.id === studentId);
+                if (student) {
+                    populateIdCardModal(student);
+                }
+            }
+        });
+
+        cancelIdCardBtn.addEventListener('click', () => {
+            idCardModal.classList.add('hidden');
+        });
+
+        printIdCardBtn.addEventListener('click', () => {
+            window.print();
+        });
+        
+        const populateIdCardModal = (student) => {
+            idCardStudentName.textContent = student.name || 'N/A';
+            idCardStudentClass.textContent = student.class || 'N/A';
+            idCardStudentRoll.textContent = student.rollNumber || 'N/A';
+            idCardFatherName.textContent = student.fatherName || 'N/A';
+            idCardMobileNumber.textContent = student.mobileNumber || 'N/A';
+            idCardBloodGroup.textContent = student.bloodGroup || 'N/A';
+            
+            idCardModal.classList.remove('hidden');
+        };
+
+    </script>
+
+</body>
+</html>
